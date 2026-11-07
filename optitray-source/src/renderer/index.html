@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:">
+  <title>OptiTray</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="bar">
+      <button id="back" class="icon-btn" title="All tools (Esc)" aria-label="Back" hidden>
+        <svg viewBox="0 0 16 16"><path d="M10 3 5 8l5 5" /></svg>
+      </button>
+      <div class="title"><span id="title">OptiTray</span><span id="subtitle" class="muted"></span></div>
+      <button id="pin" class="icon-btn" title="Keep open" aria-label="Pin" aria-pressed="false">
+        <svg viewBox="0 0 16 16"><path d="M6 2h4l-.5 4 2.5 2.5H4L6.5 6 6 2Zm2 6.5V14" /></svg>
+      </button>
+      <button id="close" class="icon-btn" title="Hide" aria-label="Hide">
+        <svg viewBox="0 0 16 16"><path d="m4 4 8 8M12 4l-8 8" /></svg>
+      </button>
+    </header>
+
+    <main id="view"></main>
+
+    <footer class="foot muted">
+      <span id="hint">Click a result to copy</span>
+      <span id="toast" class="toast" aria-live="polite"></span>
+    </footer>
+  </div>
+  <script src="../calc.js"></script>
+  <script src="tools.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
