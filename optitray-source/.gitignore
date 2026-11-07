@@ -1,2 +1,6 @@
 node_modules/
 dist/
+# code-signing material: never commit
+*.pfx
+*.p12
+metadata.json

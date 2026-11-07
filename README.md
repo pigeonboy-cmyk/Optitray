@@ -24,35 +24,53 @@ Inputs are remembered between sessions.
 
 ## Install
 
-- `OptiTray Setup 1.0.1.exe`: per-user installer (no admin rights), adds a Start-menu entry and launches into the tray.
-- `OptiTray-1.0.1-portable.exe`: single exe, no install.
+- `OptiTray-Setup-1.1.0.exe`: per-user installer (no admin rights). It adds a Start-menu entry and an entry under
+  Settings → Apps for uninstalling, then launches into the tray.
+- `OptiTray-1.1.0-portable.zip`: unzip anywhere and run `OptiTray-win32-x64\OptiTray.exe`. No install.
 
-The builds are unsigned, so Windows SmartScreen may show "Windows protected your PC". Choose **More info → Run anyway**.
+Unsigned builds may trigger Windows SmartScreen ("Windows protected your PC"). Choose **More info → Run anyway**.
+The build can sign the exe and installer when a code-signing certificate is configured; see [SIGNING.md](optitray-source/SIGNING.md).
 On Windows 11 the icon may land in the hidden-icons overflow (^). Drag it onto the taskbar to keep it visible.
 
 ## Network and security
 
 - **Fully offline.** The app makes no network requests: no updates, telemetry, fonts or CDNs. Every request that is not a
-  bundled local file is cancelled in `src/main.js`, pop-up windows and navigation are blocked, and all browser permissions
-  except clipboard write are denied. The page also carries a strict Content-Security-Policy (`'self'` only).
-- **No runtime npm packages.** The shipped app is Electron plus the files in `src/`. `electron` and `electron-builder` are
-  build-time dev dependencies, pinned to exact versions.
+  file inside the app folder is cancelled in `optitray-source/src/main.js`. Pop-up windows, navigation, redirects and `<webview>` are
+  blocked for every web page the app creates, and all browser permissions except clipboard write are denied. The page also
+  carries a strict Content-Security-Policy (`'self'` only, no plugins, no `<base>`, no form posts).
+- **IPC sender checks.** The main process accepts IPC messages only from the bundled popup page in its own window.
+- **Electron fuses.** The build turns off `ELECTRON_RUN_AS_NODE`, `NODE_OPTIONS` and `--inspect`, so the (signed) exe
+  cannot be used to run someone else's code, and turns cookie encryption on.
+- **Safe installer.** The installer always installs into a folder named `OptiTray`, and the installer and uninstaller only
+  delete a folder that contains an OptiTray install, even when started with `/D=<folder>`.
+- **No runtime npm packages.** The shipped app is the official Electron runtime plus the files in `src/`.
+- **Minimal, pinned build dependencies.** Four exact-pinned dev dependencies (`electron`, `@electron/get`,
+  `@electron-internal/extract-zip`, `resedit`), 15 packages in total, no install scripts, no deprecation warnings.
+  electron-builder is not used.
+- **Verified runtime.** The build downloads the Electron zip from the official GitHub release and checks its SHA-256
+  against the checksums published inside the `electron` npm package before using it.
 - **Renderer is sandboxed** (`sandbox`, `contextIsolation`, no Node integration). It only gets six IPC calls (hide, pin, menu, quit, and two listeners).
-- `npm audit` (Nov 2026): 0 vulnerabilities. electron-builder's tooling pulled in minimatch 9.x/10.x (GHSA-g3hv-75wg-m249, a DoS);
-  an `overrides` entry in `package.json` forces every affected copy onto the patched minimatch 11.0.3.
+- **Optional code signing** of the exe, installer and uninstaller with `signtool` (no extra npm packages); see [SIGNING.md](optitray-source/SIGNING.md).
+- `npm audit` (7 Nov 2026): 0 vulnerabilities. Dependabot checks the pinned dependencies weekly.
+- Report vulnerabilities privately; see [SECURITY.md](SECURITY.md).
 
 ## Develop
 
 ```bash
-npm install
-npx install-electron --no   # only if `npm start` says Electron failed to install
+cd optitray-source
+npm ci             # installs the exact, audited versions from package-lock.json
+npx install-electron --no   # once: downloads the Electron runtime for `npm start`
 npm start          # run from source
 npm test           # unit tests for the calculation core (src/calc.js)
-npm run dist       # build installer + portable exe into dist/
+npm run dist       # build dist/OptiTray-win32-x64, the portable zip and (if NSIS is installed) the installer
 npm run icons      # regenerate assets/ icons
 ```
 
-Layout:
+The installer needs NSIS (`winget install NSIS.NSIS`). Without it, `npm run dist` still produces the portable build.
+The build is `scripts/build.mjs` plus `scripts/installer.nsi`. Code signing is optional, in `scripts/sign.mjs`
+(setup in [SIGNING.md](optitray-source/SIGNING.md)).
+
+Layout (inside `optitray-source/`):
 
 - `src/calc.js`: pure calculation core (SI units, no dependencies), shared by tests and UI.
 - `src/renderer/tools.js`: tool definitions (inputs per mode + compute → result rows). Add a tool here.
@@ -67,6 +85,11 @@ Layout:
 - Fabry–Pérot finesse is reflectivity-limited, 𝓕 = π√R/(1−R) with R = √(R1R2)·(1 − loss per pass). Inverse reflectivity assumes equal lossless mirrors.
 - Mixing is energy conservation only (no phase matching).
 - Gaussian beam: 1/e² radius, divergence θ = M²λ/(πw₀n). Focusing uses w₀ = M²λf/(πw_in).
+
+## Contributing
+
+Bug reports, formula corrections and new tools are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[code of conduct](CODE_OF_CONDUCT.md).
 
 ## License
 

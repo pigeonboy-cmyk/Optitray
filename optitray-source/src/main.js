@@ -1,6 +1,21 @@
 // OptiTray main process: tray icon + frameless popup that opens above the notification area.
 const { app, BrowserWindow, Tray, Menu, ipcMain, screen, globalShortcut, nativeImage, session } = require('electron');
 const path = require('path');
+const { fileURLToPath } = require('url');
+
+// Everything the renderer may load lives under the app root (src/ and assets/).
+const APP_ROOT = path.resolve(__dirname, '..') + path.sep;
+const RENDERER_PAGE = path.join(__dirname, 'renderer', 'index.html');
+
+// Paths are compared case-insensitively (Windows file system) after decoding the URL.
+function filePath(url) {
+  try {
+    return path.resolve(fileURLToPath(url)).toLowerCase();
+  } catch {
+    return null;
+  }
+}
+const isAppFile = (url) => (filePath(url) || '').startsWith(APP_ROOT.toLowerCase());
 
 const POPUP_W = 400;
 const POPUP_H = 600;
@@ -56,10 +71,26 @@ function createWindow() {
   win.on('blur', () => {
     if (!pinned && !win.webContents.isDevToolsOpened()) hidePopup();
   });
-  // Offline by design: no pop-up windows and no navigation away from the bundled page.
-  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-  win.webContents.on('will-navigate', (e) => e.preventDefault());
 }
+
+// Offline by design: no pop-up windows, no <webview>, no navigation away from the bundled page.
+// Applied to every webContents (including DevTools-spawned ones), not only the popup.
+app.on('web-contents-created', (_e, contents) => {
+  contents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  contents.on('will-navigate', (e) => e.preventDefault());
+  contents.on('will-redirect', (e) => e.preventDefault());
+  contents.on('will-attach-webview', (e) => e.preventDefault());
+});
+
+// IPC is only accepted from the bundled popup page in our own window.
+function fromPopup(event) {
+  return !!win && event.sender === win.webContents && !!event.senderFrame
+    && event.senderFrame === win.webContents.mainFrame
+    && filePath(event.senderFrame.url) === RENDERER_PAGE.toLowerCase();
+}
+const onIpc = (channel, handler) => ipcMain.on(channel, (event, ...args) => {
+  if (fromPopup(event)) handler(...args);
+});
 
 function positionPopup() {
   const tb = tray.getBounds();
@@ -127,11 +158,15 @@ function setPinned(v) {
 }
 
 app.whenReady().then(() => {
-  // Block every request that is not a bundled local file, so the app never touches the network.
+  // Block every request that is not a bundled app file, so the app never touches the network
+  // or reads other files on disk.
   session.defaultSession.webRequest.onBeforeRequest((details, cb) => {
-    cb({ cancel: !/^(file|devtools|data):/i.test(details.url) });
+    const ok = /^(devtools|data):/i.test(details.url) || (/^file:/i.test(details.url) && isAppFile(details.url));
+    cb({ cancel: !ok });
   });
-  session.defaultSession.setPermissionRequestHandler((_wc, perm, cb) => cb(perm === 'clipboard-sanitized-write'));
+  const allowPermission = (perm) => perm === 'clipboard-sanitized-write';
+  session.defaultSession.setPermissionRequestHandler((_wc, perm, cb) => cb(allowPermission(perm)));
+  session.defaultSession.setPermissionCheckHandler((_wc, perm) => allowPermission(perm));
   session.defaultSession.setSpellCheckerEnabled(false);
   const iconPath = path.join(__dirname, '..', 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon-32.png');
   tray = new Tray(nativeImage.createFromPath(iconPath));
@@ -141,10 +176,10 @@ app.whenReady().then(() => {
   createWindow();
   globalShortcut.register(HOTKEY, togglePopup);
 
-  ipcMain.on('hide', hidePopup);
-  ipcMain.on('set-pinned', (_e, v) => setPinned(!!v));
-  ipcMain.on('quit', () => app.quit());
-  ipcMain.on('menu', () => tray.popUpContextMenu(buildMenu()));
+  onIpc('hide', hidePopup);
+  onIpc('set-pinned', (v) => setPinned(v === true));
+  onIpc('quit', () => app.quit());
+  onIpc('menu', () => tray.popUpContextMenu(buildMenu()));
 });
 
 app.on('second-instance', () => showPopup());

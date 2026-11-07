@@ -6,11 +6,23 @@
   "main": "src/main.js",
   "license": "GPL-3.0-only",
   "author": "OptiTray",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pigeonboy-cmyk/Optitray.git",
+    "directory": "optitray-source"
+  },
+  "bugs": "https://github.com/pigeonboy-cmyk/Optitray/issues",
+  "homepage": "https://github.com/pigeonboy-cmyk/Optitray#readme",
+  "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "start": "electron .",
     "test": "node --test",
     "icons": "node scripts/make-icons.js",
-    "dist": "node scripts/build.mjs"
+    "dist": "node scripts/build.mjs",
+    "sign": "node scripts/sign.mjs"
   },
   "devDependencies": {
     "@electron-internal/extract-zip": "1.0.8",

@@ -1,0 +1,10 @@
+# Weekly pull requests for security and version updates of the pinned build dependencies
+# (Electron in particular, since its security fixes reach users only through a rebuild).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /optitray-source
+    schedule:
+      interval: weekly
+    versioning-strategy: increase
+    open-pull-requests-limit: 5

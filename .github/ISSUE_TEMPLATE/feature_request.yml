@@ -1,0 +1,21 @@
+name: Feature or new tool
+description: Suggest a new calculator or an improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What do you want to calculate or do?
+      description: Describe the task and why the current tools don't cover it.
+    validations:
+      required: true
+  - type: textarea
+    id: formulas
+    attributes:
+      label: Formulas and references
+      description: Equations, assumptions and a reference (paper, textbook, datasheet) if you have them.
+  - type: textarea
+    id: io
+    attributes:
+      label: Inputs and outputs
+      description: Which values you would enter (with units) and which results you want to see.

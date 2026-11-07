@@ -1,6 +1,12 @@
 ; OptiTray per-user installer (no admin rights). Built by scripts/build.mjs.
 ; Defines passed in: APP_NAME, APP_VERSION, SRC_DIR, OUT_FILE, ICON
+; Optional (code signing on): SIGN_NODE, SIGN_SCRIPT. The installer itself is signed by build.mjs
+; after makensis finishes; the uninstaller is signed here, before it is embedded.
 Unicode true
+
+!ifdef SIGN_SCRIPT
+  !uninstfinalize '"${SIGN_NODE}" "${SIGN_SCRIPT}" "%1"' = 0
+!endif
 SetCompressor /SOLID lzma
 RequestExecutionLevel user
 
@@ -15,6 +21,27 @@ AutoCloseWindow true
 
 !define UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
 
+!include "FileFunc.nsh"
+
+; Safety: install and uninstall delete $INSTDIR recursively. `Setup.exe /D=<dir>` can point
+; $INSTDIR anywhere, so always install into a folder named after the app (C:\Foo -> C:\Foo\OptiTray)
+; and only ever wipe a folder that holds our exe.
+Function .onInit
+  ${GetFileName} "$INSTDIR" $0
+  StrCmp $0 "${APP_NAME}" +2
+    StrCpy $INSTDIR "$INSTDIR\${APP_NAME}"
+FunctionEnd
+
+Function un.onInit
+  ${GetFileName} "$INSTDIR" $0
+  StrCmp $0 "${APP_NAME}" 0 refuse
+  IfFileExists "$INSTDIR\${APP_NAME}.exe" done refuse
+  refuse:
+    MessageBox MB_OK|MB_ICONSTOP "${APP_NAME} does not appear to be installed in $INSTDIR. Nothing was removed."
+    Abort
+  done:
+FunctionEnd
+
 Page instfiles
 UninstPage uninstConfirm
 UninstPage instfiles
@@ -23,7 +50,9 @@ Section "Install"
   ; Close a running copy so files can be replaced.
   nsExec::Exec 'taskkill /IM "${APP_NAME}.exe" /F'
   Sleep 500
-  RMDir /r "$INSTDIR"
+  ; Remove a previous install only (never an arbitrary existing folder).
+  IfFileExists "$INSTDIR\${APP_NAME}.exe" 0 +2
+    RMDir /r "$INSTDIR"
   SetOutPath "$INSTDIR"
   File /r "${SRC_DIR}\*"
   WriteUninstaller "$INSTDIR\Uninstall ${APP_NAME}.exe"

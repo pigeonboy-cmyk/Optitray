@@ -1,0 +1,65 @@
+name: Bug report
+description: Something is broken or a result is wrong
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **Security problems:** please do not file them here; see [SECURITY.md](https://github.com/pigeonboy-cmyk/Optitray/blob/main/SECURITY.md).
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type of problem
+      options:
+        - Wrong or unexpected calculation result
+        - App behaviour (tray, popup, hotkey, settings)
+        - Installer / uninstaller
+        - Building from source
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: OptiTray version
+      placeholder: "1.1.0"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11 24H2"
+    validations:
+      required: true
+  - type: dropdown
+    id: build
+    attributes:
+      label: Which build
+      options:
+        - Installer
+        - Portable zip
+        - Built from source
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: For a wrong result, include the tool, every input with its unit, and what OptiTray showed.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: For a wrong result, the correct value and where it comes from (formula, textbook, datasheet).
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Fabry–Pérot
+        2. Enter ...
