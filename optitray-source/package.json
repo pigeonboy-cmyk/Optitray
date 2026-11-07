@@ -4,7 +4,7 @@
   "version": "1.1.0",
   "description": "System tray calculators for optical engineers: dB, wavelength/frequency, Fabry-Perot, nonlinear mixing, beams, fibers.",
   "main": "src/main.js",
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "author": "OptiTray",
   "scripts": {
     "start": "electron .",

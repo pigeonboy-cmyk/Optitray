@@ -67,3 +67,7 @@ Layout:
 - Fabry–Pérot finesse is reflectivity-limited, 𝓕 = π√R/(1−R) with R = √(R1R2)·(1 − loss per pass). Inverse reflectivity assumes equal lossless mirrors.
 - Mixing is energy conservation only (no phase matching).
 - Gaussian beam: 1/e² radius, divergence θ = M²λ/(πw₀n). Focusing uses w₀ = M²λf/(πw_in).
+
+## License
+
+OptiTray is licensed under the GNU General Public License v3.0. See [LICENSE](LICENSE) for the full text.
